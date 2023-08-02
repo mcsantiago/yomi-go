@@ -1,0 +1,78 @@
+openapi: 3.0.3
+info:
+  title: Tokenizer Service - 0.0.1
+  description: |-
+    This service focuses on the tokenization of various languages.
+  termsOfService: http://swagger.io/terms/
+  contact:
+    email: apiteam@swagger.io
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.11
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+  - url: https://petstore3.swagger.io/api/v3
+tags:
+  - name: tokenizer
+    description: Language tokenizers
+    externalDocs:
+      description: Find out more
+      url: http://swagger.io
+paths:
+  /japanese/kotori/tokenize:
+    post:
+      tags:
+        - tokenizer
+      summary: Tokenizes Japanese text via the kotori tokenizer.
+      description: Wraps the kotori tokenizer. More info https://github.com/wanasit/kotori.
+      operationId: tokenizeJapanese
+      requestBody:
+        description: Text to be tokenized.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JapaneseTokenizerRequest'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JapaneseTokenizerResponse'          
+        '500':
+          description: Unable to parse text for some reason.
+
+components:
+  schemas:
+    JapaneseTokenizerRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          example: "お寿司が食べたい。"
+    JapaneseTokenizerResponse:
+      type: object
+      properties:
+        tokens: 
+          type: array
+          items: 
+            description: String Tokens
+            type: string
+          minItems: 1
+          example: ["お", "寿司", "が", "食べ", "たい", "。"]
+  securitySchemes:
+    tokenizer_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
+          scopes:
+            write:pets: modify pets in your account
+            read:pets: read your pets
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header
