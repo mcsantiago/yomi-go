@@ -1,4 +1,4 @@
-module tokenizer_service
+module github.com/scriptsight/tokenizerservice
 
 go 1.20
 
