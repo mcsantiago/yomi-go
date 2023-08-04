@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ikawaha/kagome-dict/ipa"
@@ -12,6 +10,16 @@ import (
 
 type JapaneseTokenizerRequest struct {
 	Text string `json:"text"`
+}
+
+type JapaneseTokenizerResponse struct {
+	KnownTokens   []Token `json:"known_tokens"`
+	UnknownTokens []Token `json:"unknown_tokens"`
+}
+
+type Token struct {
+	Surface  string   `json:"surface"`
+	Features []string `json:"features"`
 }
 
 func HandleJapaneseTokenizerRequest(c *gin.Context) {
@@ -23,27 +31,42 @@ func HandleJapaneseTokenizerRequest(c *gin.Context) {
 		return
 	}
 
-	var tokens = tokenize(request.Text)
-
-	c.JSON(http.StatusOK, gin.H{
-		"tokens": tokens,
-	})
+	var response = kotoriTokenize(request.Text)
+	c.JSON(http.StatusOK, response)
 }
 
-func tokenize(str string) []string {
+func kotoriTokenize(str string) JapaneseTokenizerResponse {
 	t, err := tokenizer.New(ipa.Dict(), tokenizer.OmitBosEos())
+	var JapaneseTokenizerResponse JapaneseTokenizerResponse
 
 	if err != nil {
 		panic(err)
 	}
 	tokens := t.Tokenize(str)
-	var surfaces []string
+	var knownResponseTokens []Token
+	var unKnownResponseTokens []Token
 
 	for _, token := range tokens {
-		features := strings.Join(token.Features(), ",")
-		surfaces = append(surfaces, token.Surface)
-		fmt.Printf("%s\t%v\n", token.Surface, features)
+		if token.Surface == "" {
+			continue
+		}
+
+		if token.Class == tokenizer.KNOWN {
+			knownResponseTokens = append(knownResponseTokens, Token{
+				Surface:  token.Surface,
+				Features: token.Features(),
+			})
+		}
+		if token.Class == tokenizer.UNKNOWN {
+			unKnownResponseTokens = append(unKnownResponseTokens, Token{
+				Surface:  token.Surface,
+				Features: token.Features(),
+			})
+		}
 	}
 
-	return surfaces
+	JapaneseTokenizerResponse.KnownTokens = knownResponseTokens
+	JapaneseTokenizerResponse.UnknownTokens = unKnownResponseTokens
+
+	return JapaneseTokenizerResponse
 }
