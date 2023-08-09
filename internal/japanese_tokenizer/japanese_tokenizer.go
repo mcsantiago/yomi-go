@@ -19,8 +19,8 @@ type JapaneseTokenizerResponse struct {
 }
 
 type TokenExt struct {
-	TokenData tokenizer.TokenData `json:"token_data"`
-	Glossary  string              `json:"glossary"`
+	TokenData     tokenizer.TokenData         `json:"token_data"`
+	JmdictEntries []japanese_dict.JmdictEntry `json:"jmdict_entries"`
 }
 
 func HandleJapaneseTokenizerRequest(c *gin.Context, dict map[string][]japanese_dict.JmdictEntry) {
@@ -45,19 +45,18 @@ func kotoriTokenize(str string, dict map[string][]japanese_dict.JmdictEntry) Jap
 	var tokenExts []TokenExt
 
 	for _, token := range tokens {
-		entries := dict[token.Surface]
-		translation := ""
-		if len(entries) > 0 {
-			translation = entries[0].Sense[0].Glossary[0].Content
+		entries, ok := dict[token.Surface]
+		if !ok {
+			entries = []japanese_dict.JmdictEntry{}
 		}
 		tokenExts = append(tokenExts, TokenExt{
-			TokenData: tokenizer.NewTokenData(token),
-			Glossary:  translation,
+			TokenData:     tokenizer.NewTokenData(token),
+			JmdictEntries: entries,
 		})
 	}
 
 	return JapaneseTokenizerResponse{
-		Translation: "",
+		Translation: "", // TODO: Implement translation
 		Tokens:      tokenExts,
 	}
 }
