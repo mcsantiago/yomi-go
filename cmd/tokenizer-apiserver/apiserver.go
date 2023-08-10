@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	filepath := "../../data/JMdict_e"
+	filepath := "/data/JMdict_e"
 	reader, err := os.Open(filepath)
 	if err != nil {
 		fmt.Printf("Error opening file: %s", err)
