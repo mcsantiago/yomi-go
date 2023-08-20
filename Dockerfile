@@ -7,7 +7,8 @@ WORKDIR /app
 # Copy everything from the current directory to the Working Directory inside the container
 COPY . .
 
-COPY ./data/JMdict_e /data/JMdict_e
+COPY ./cmd/tokenizer-apiserver/data/JMdict_e /data/JMdict_e
+COPY ./cmd/tokenizer-apiserver/templates /templates
 
 # Download all the dependencies
 RUN go mod download
@@ -26,7 +27,8 @@ WORKDIR /root/
 COPY --from=builder /app/main .
 
 # Copy the data files from the previous stage
-COPY --from=builder /data/JMdict_e /data/JMdict_e
+COPY --from=builder /data/JMdict_e ./data/JMdict_e
+COPY --from=builder /templates ./templates
 
 # Expose port to the outside world (if applicable)
 EXPOSE 8080

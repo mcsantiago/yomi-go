@@ -1,6 +1,8 @@
 package japanese_tokenizer
 
 import (
+	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -33,6 +35,13 @@ func HandleJapaneseTokenizerRequest(c *gin.Context, dict map[string][]japanese_d
 	}
 
 	c.JSON(http.StatusOK, kotoriTokenize(request.Text, dict))
+}
+
+func HandleJapaneseAnalyzerRequest(c *gin.Context, dict map[string][]japanese_dict.JmdictEntry, tpl *template.Template) {
+	fmt.Println("HandleJapaneseAnalyzerRequest")
+	text := c.PostForm("text")
+	fmt.Println(c.PostForm("text"))
+	c.JSON(http.StatusOK, kotoriTokenize(text, dict))
 }
 
 func kotoriTokenize(str string, dict map[string][]japanese_dict.JmdictEntry) JapaneseTokenizerResponse {
