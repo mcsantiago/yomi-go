@@ -9,10 +9,13 @@
         
         <div class="container text-center mt-5">
             <h1>Welcome to ScriptSight</h1>
-            <form >
+            <form>
                 <div class="input-group">
                     <input type="text" class="form-control" name="text" aria-label="Enter Japanese sentence here...">
-                    <button hx-post="/japanese/kotori/analyze" type="button" class="btn btn-outline-primary">Analyze</button>
+                    <button hx-post="/japanese/kotori/analyze" 
+                        hx-target="#tokenizerResponse"
+                        type="button" 
+                        class="btn btn-outline-primary">Analyze</button>
                 </div>
             </form>
             <!--
@@ -23,7 +26,7 @@
                 </form>
             </div>
             -->
-            <div class="mt-4">
+            <div class="mt-4" id="tokenizerResponse">
                 <p>Deconstruct any body of Japanese text!</p>
                 <p>日本語のテキストを分析してください！</p>
             </div>

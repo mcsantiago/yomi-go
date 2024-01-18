@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<div class="sentenceTranslation">
+    <p>{{ .Translation }}</p>
+</div>
+
+{{ range .Tokens }}
+    <div class="cardsdasd">
+        <h1>{{ .TokenData.Surface }}</h1>
+        {{ range .JmdictEntries }}
+            <div>
+                {{ range .Sense }}
+                    {{ range .Glossary }}
+                        <strong>Entry:</strong> {{ .Content }} 
+                    {{ end }}
+                {{ end }}
+            </div>
+        {{ end }}
+    </div>
+{{ end }}

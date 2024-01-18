@@ -1,10 +1,14 @@
 package japanese_tokenizer
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 
+	translate "cloud.google.com/go/translate/apiv3"
+	translatepb "cloud.google.com/go/translate/apiv3/translatepb"
 	"github.com/gin-gonic/gin"
 	"github.com/ikawaha/kagome-dict/ipa"
 	"github.com/ikawaha/kagome/v2/tokenizer"
@@ -34,17 +38,48 @@ func HandleJapaneseTokenizerRequest(c *gin.Context, dict map[string][]japanese_d
 		return
 	}
 
-	c.JSON(http.StatusOK, kotoriTokenize(request.Text, dict))
+	translation, err := translateText("scriptsight-396805", "ja", "en-us", request.Text)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	response := JapaneseTokenizerResponse{
+		Translation: translation,
+		Tokens:      kotoriTokenize(request.Text, dict),
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
+/*
+*
+Serves a HTML page with the Japanese Tokenizer Response
+*/
 func HandleJapaneseAnalyzerRequest(c *gin.Context, dict map[string][]japanese_dict.JmdictEntry, tpl *template.Template) {
 	fmt.Println("HandleJapaneseAnalyzerRequest")
 	text := c.PostForm("text")
 	fmt.Println(c.PostForm("text"))
-	c.JSON(http.StatusOK, kotoriTokenize(text, dict))
+	tokens := kotoriTokenize(text, dict)
+	translation, err := translateText("scriptsight-396805", "ja", "en-us", text)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	tpl.ExecuteTemplate(c.Writer, "tokenCards.html", JapaneseTokenizerResponse{
+		Translation: translation,
+		Tokens:      tokens,
+	})
 }
 
-func kotoriTokenize(str string, dict map[string][]japanese_dict.JmdictEntry) JapaneseTokenizerResponse {
+func kotoriTokenize(str string, dict map[string][]japanese_dict.JmdictEntry) []TokenExt {
 	t, err := tokenizer.New(ipa.Dict(), tokenizer.OmitBosEos())
 
 	if err != nil {
@@ -64,8 +99,36 @@ func kotoriTokenize(str string, dict map[string][]japanese_dict.JmdictEntry) Jap
 		})
 	}
 
-	return JapaneseTokenizerResponse{
-		Translation: "", // TODO: Implement translation
-		Tokens:      tokenExts,
+	return tokenExts
+}
+
+func translateText(projectID string, sourceLang string, targetLang string, text string) (string, error) {
+	ctx := context.Background()
+	client, err := translate.NewTranslationClient(ctx)
+	if err != nil {
+		return "", fmt.Errorf("NewTranslationClient: %v", err)
 	}
+	defer client.Close()
+
+	req := &translatepb.TranslateTextRequest{
+		Parent:             fmt.Sprintf("projects/%s/locations/global", projectID),
+		SourceLanguageCode: sourceLang,
+		TargetLanguageCode: targetLang,
+		MimeType:           "text/plain", // Mime types: "text/plain", "text/html"
+		Contents:           []string{text},
+	}
+
+	resp, err := client.TranslateText(ctx, req)
+	if err != nil {
+		return "", fmt.Errorf("TranslateText: %v", err)
+	}
+
+	var translations []string
+	// Display the translation for each input text provided
+	for _, translation := range resp.GetTranslations() {
+		translations = append(translations, translation.GetTranslatedText())
+		fmt.Printf("Translated text: %v\n", translation.GetTranslatedText())
+	}
+
+	return strings.Join(translations, ""), nil
 }
